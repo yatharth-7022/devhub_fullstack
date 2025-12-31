@@ -2,10 +2,12 @@ import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ResourcesService } from './resources.service';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
-import { CreateResourceDto } from './dto/create-resource.dto';
 import type { JwtUserPayload } from 'src/common/decorators/current-user.decorator';
 import { ok, fail } from 'src/common/api-response';
+
+import { CreateResourceDto } from './dto/create-resource.dto';
 import { CreateFromUrlDto } from './dto/create-from-url.dto';
+import { ListResourcesQueryDto } from './dto/list-resources.query.dto'; // NEW
 
 @Controller('resources')
 @UseGuards(AuthGuard('jwt'))
@@ -24,20 +26,16 @@ export class ResourcesController {
     return ok(resource);
   }
 
+  // ✅ REPLACED GET
   @Get()
-  async findBySpace(
+  async list(
     @CurrentUser() user: JwtUserPayload,
-    @Query('spaceId') spaceId?: string,
+    @Query() query: ListResourcesQueryDto,
   ) {
-    if (!spaceId) {
-      return fail('spaceId query parameter is required', 'BAD_REQUEST');
-    }
-    const resources = await this.resourceService.findBySpaceForUser(
-      user.sub,
-      spaceId,
-    );
-    return ok(resources);
+    const result = await this.resourceService.listForSpace(user.sub, query);
+    return ok(result);
   }
+
   @Post('from-url')
   async createFromUrl(
     @CurrentUser() user: JwtUserPayload,
